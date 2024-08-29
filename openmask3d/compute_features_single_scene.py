@@ -34,7 +34,7 @@ def main(ctx: DictConfig):
     print(f"[INFO] Masks loaded. {masks.num_masks} masks found.")    
     
     # 2. Load the images
-    indices = np.arange(0, get_number_of_images(ctx.data.camera.poses_path), step = ctx.openmask3d.frequency)
+    indices = np.arange(0, get_number_of_images(ctx.data.camera.poses_path), step = 1)# ctx.openmask3d.frequency)
     images = Images(images_path=ctx.data.images.images_path, 
                     extension=ctx.data.images.images_ext, 
                     indices=indices)

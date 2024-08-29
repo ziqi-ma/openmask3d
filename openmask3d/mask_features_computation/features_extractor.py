@@ -123,6 +123,7 @@ class FeaturesExtractor:
         
     
     def extract_features(self, topk, multi_level_expansion_ratio, num_levels, num_random_rounds, num_selected_points, save_crops, out_folder, optimize_gpu_usage=False):
+        print("aaa")
         if(save_crops):
             out_folder = os.path.join(out_folder, "crops")
             os.makedirs(out_folder, exist_ok=True)
@@ -133,12 +134,16 @@ class FeaturesExtractor:
         mask_clip = np.zeros((num_masks, 768)) #initialize mask clip
         
         np_images = self.images.get_as_np_list()
+        
         for mask in tqdm(range(num_masks)): # for each mask 
+            print(num_masks)
+            print("!!!!!!")
             images_crops = []
             if(optimize_gpu_usage):
                 self.clip_model.to(torch.device('cpu'))
                 self.predictor_sam.model.cuda()
             for view_count, view in enumerate(topk_indices_per_mask[mask]): # for each view
+                print("a")
                 if(optimize_gpu_usage):
                     torch.cuda.empty_cache()
                 
