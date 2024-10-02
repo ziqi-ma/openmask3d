@@ -87,77 +87,44 @@ class InstSegEvaluator():
 
 
 if __name__ == '__main__':
-    my_dict = {}
-    my_dict["Bottle"]="4403 6771 3558 3520 4233"
-    my_dict["Box"]="100664 100658 100141 100243 100189"
-    my_dict["Bucket"]="100477 100482 102359 100486 100470"
-    my_dict["Camera"]="102873 102442 102831 102417 102876"
-    my_dict["Cart"]="101053 100852 101091 100504 100075"
-    my_dict["Chair"]="37099 38325 40982 44729 41653"
-    my_dict["Clock"]="6613 6934 6917 7037 7007"
-    my_dict["CoffeeMachine"]="103041 103140 103084 103129 103143"
-    my_dict["Dishwasher"]="12606 12592 12559 12092 12259"
-    my_dict["Dispenser"]="101542 101528 103378 101561 101490"
-    my_dict["Display"]="4608 4589 3392 5088 4541"
-    my_dict["Door"]="9107 9388 8897 8961 8983"
-    my_dict["Eyeglasses"]="102590 101843 102612 102586 102617"
-    my_dict["Faucet"]="1667 156 2017 1785 857"
-    my_dict["FoldingChair"]="100557 100609 100532 100598 100568"
-    my_dict["Globe"] = "100803 100745 100786 100758 100756"
-    my_dict["Kettle"]="102739 102768 101305 102761 102753"
-    my_dict["Dispenser"]="101542 101528 103378 101561 101490"
-    my_dict["Keyboard"]="13082 12727 13136 12917 12965"
-    my_dict["KitchenPot"]="100017 100028 100025 100047 100051"
-    my_dict["Knife"]="103583 103713 103700 103739 101660"
-    my_dict["Lamp"]="14306 14703 16012 14567 14402"
-    my_dict["Laptop"]="11156 10238 10885 11876 9918"
-    my_dict["Lighter"]="100289 100285 100334 100335 100320"
-    my_dict["Microwave"]="7273 7221 7167 7292 7263"
-    my_dict["Mouse"]="102273 103022 101408 102276 102272"
-    my_dict["Oven"]="101909 102019 7347 7130 101773"
-    my_dict["Pen"]="102965 101713 102939 102963 102960"
-    my_dict["Phone"]="103892 103917 103251 103350 103941"
-    my_dict["Pliers"]="102258 102260 100142 102221 102242"
-    my_dict["Printer"]="104009 104004 103811 104006 103866"
-    my_dict["Refrigerator"]="11846 10612 12038 12055 10627"
-    my_dict["Microwave"]="7273 7221 7167 7292 7263"
-    my_dict["Remote"]="104044 100395 104039 101139 101014"
-    my_dict["Safe"]="101612 102381 101611 101584 101579"
-    my_dict["Scissors"]="10502 11029 10895 10968 11077"
-    my_dict["Stapler"]="103099 103271 103111 103789 103301"
-    my_dict["StorageFurniture"]="46456 45384 46879 45247 46556"
-    my_dict["Suitcase"]="101668 100550 101049 100248 100842"
-    my_dict["Switch"]="100911 100952 102872 100971 100845"
-    my_dict["Table"]="20745 27619 25913 26899 26545"
-    my_dict["Toaster"]="103485 103560 103558 103473 103469"
-    my_dict["Toilet"]="102648 102631 102675 102636 102688"
-    my_dict["TrashCan"]="102187 102165 102227 102202 102229"
-    my_dict["USB"]="100061 100065 102052 100128 101999"
-    my_dict["WashingMachine"]="103452 103776 100283 103369 103518"
-    my_dict["Window"]="103332 103239 102985 103315 103015"
-    
-    category = "Window"
-    ids = my_dict[category].split(" ")
-    print(ids)
-
-    #parser = argparse.ArgumentParser()
-    #opt = parser.parse_args()
-    # ScanNet200, "a {} in a scene", all masks are assigned 1.0 as the confidence score
-    stime = time.time()
+    classes = ["Bottle","Box","Bucket","Camera","Cart","Chair","Clock","CoffeeMachine",
+                "Dishwasher","Dispenser","Display","Door","Eyeglasses","Faucet","FoldingChair",
+                "Globe","Kettle","Keyboard","KitchenPot","Knife","Lamp","Laptop","Lighter",
+                "Microwave","Mouse","Oven","Pen","Phone","Pliers","Printer","Refrigerator",
+                "Remote","Safe","Scissors","Stapler","StorageFurniture","Suitcase","Switch",
+                "Table","Toaster","Toilet","TrashCan","USB","WashingMachine","Window"]
+    print(len(classes))
     evaluator = InstSegEvaluator('ViT-L/14@336px')
     with open(f"/data/partnet-mobility/PartNetE_meta.json") as f:
         all_mapping = json.load(f)
-    labels = all_mapping[category]
-    print(labels)
-    acc_all = []
-    iou_all = []
-    for id in ids:
-        data_dir = f"/data/partnet-mobility/test/{category}/{id}"
-        acc, iou = evaluator.evaluate_full(labels, data_dir)
-        acc_all.append(acc)
-        iou_all.append(iou)
-    print(np.mean(acc_all))
-    print(np.mean(iou_all))
+    print(all_mapping)
+    stime = time.time()
+    acc_allcats = []
+    iou_allcats = []
+    for category in classes:
+        cat_stime = time.time()
+        labels = all_mapping[category]
+        print(labels)
+        decorated_labels = [f"a {label} of a {category}" for label in labels]
+        print(labels)
+        with open(f"/data/partnet-mobility/test/{category}/subsampled_ids.txt", 'r') as f:
+            data_paths = f.read().splitlines()
+        acc_all = []
+        iou_all = []
+        for data_dir in data_paths:
+            id = data_dir.split("/")[-1]
+            data_dir = f"/data/partnet-mobility/test/{category}/{id}"
+            acc, iou = evaluator.evaluate_full(decorated_labels, data_dir)
+            acc_all.append(acc)
+            iou_all.append(iou)
+        acc_allcats.append(np.mean(acc_all))
+        iou_allcats.append(np.mean(iou_all))
+        print(f"category {category}, acc mean {np.mean(acc_all)}, iou mean {np.mean(iou_all)}")
+        cat_etime = time.time()
+        print(f"time {cat_etime-cat_stime}")
+    all_macc = np.mean(acc_allcats)
+    all_miou = np.mean(iou_allcats)
+    print(f"all category, mean acc {all_macc}, mean iou {all_miou}")
     etime = time.time()
-    print((etime-stime)/5)
+    print(etime-stime)
        

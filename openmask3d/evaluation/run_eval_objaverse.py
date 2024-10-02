@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # ScanNet200, "a {} in a scene", all masks are assigned 1.0 as the confidence score
     stime = time.time()
     evaluator = InstSegEvaluator('ViT-L/14@336px')
-    split = "seenclass"
+    split = "shapenetpart"
     class_uids = sorted(os.listdir(f"/data/objaverse/holdout/{split}")) # inside docker, data is data/ziqi
     stime = time.time()
     all_accs = []
@@ -107,30 +107,15 @@ if __name__ == '__main__':
     cat_acc = {}
     for class_uid in class_uids:
         obj_path = f"/data/objaverse/holdout/{split}/{class_uid}"
+        print(class_uid)
         cat = class_uid.split("_")[0]
         acc, iou = evaluator.evaluate_full(obj_path)
         all_accs.append(acc)
         all_ious.append(iou)
-        if cat not in cat_acc:
-            cat_acc[cat] = [acc]
-        else:
-            cat_acc[cat].append(acc)
-
-        if cat not in cat_iou:
-            cat_iou[cat] = [iou]
-        else:
-            cat_iou[cat].append(iou)
-    mean_cat_accs = []
-    mean_cat_ious = []
-    for cat in cat_acc:
-        mean_cat_accs.append(np.mean(cat_acc[cat]))
-    for cat in cat_iou:
-        mean_cat_ious.append(np.mean(cat_iou[cat]))
-    cat_mean_acc = np.mean(mean_cat_accs)
-    cat_mean_iou = np.mean(mean_cat_ious)
+        
     inst_mean_acc = np.mean(all_accs)
     inst_mean_iou = np.mean(all_ious)
-    print(f"category mean acc {cat_mean_acc}, iou {cat_mean_iou}; instance mean acc {inst_mean_acc}, iou {inst_mean_iou}")
+    print(f"mean acc {inst_mean_acc}, iou {inst_mean_iou}")
     etime = time.time()
-    print((etime-stime)/len(class_uids))
+    print((etime-stime))
        

@@ -87,8 +87,8 @@ class InstSegEvaluator():
 
 
 if __name__ == '__main__':
-
-    ids = ["0","1","2","3","4"]
+    res_file_name = "res_shapenetp_rot.txt"
+    ids = ["0","1","2","3","4", "5","6","7","8","9"]
     cat2part = {'airplane': ['body','wing','tail','engine or frame'], 'bag': ['handle','body'], 'cap': ['panels or crown','visor or peak'], 
             'car': ['roof','hood','wheel or tire','body'],
             'chair': ['back','seat pad','leg','armrest'], 'earphone': ['earcup','headband','data wire'], 
@@ -105,7 +105,8 @@ if __name__ == '__main__':
         stime = time.time()
         evaluator = InstSegEvaluator('ViT-L/14@336px')
         labels = cat2part[category]
-        print(labels)
+        labels_decorated = [f"a {label} of a {category}" for label in labels]
+        print(labels_decorated)
         acc_all = []
         iou_all = []
         for id in ids:
@@ -118,10 +119,10 @@ if __name__ == '__main__':
         print(mean_acc)
         print(mean_iou)
         etime = time.time()
-        timep = (etime-stime)/5
-        print((etime-stime)/5)
-        f = open("shapenetp_inf.txt", "a")
-        f.write(f"category {category}, acc {mean_acc}, iou {mean_iou}, time {timep}")
+        timep = etime-stime
+        print(timep)
+        f = open(res_file_name, "a")
+        f.write(f"category {category}, acc {mean_acc}, iou {mean_iou}, time {timep}\n")
         f.close()
         accs.append(mean_acc)
         ious.append(mean_iou)
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     print(class_mean_acc)
     print(class_mean_iou)
     print(class_mean_time)
-    f = open("shapenetp_inf.txt", "a")
+    f = open(res_file_name, "a")
     f.write(f"class mean acc {class_mean_acc}, class mean iou {class_mean_iou}, class mean time {class_mean_time}")
     f.close()
 

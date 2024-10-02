@@ -1,7 +1,7 @@
 #!/bin/bash
 export OMP_NUM_THREADS=3  # speeds up MinkowskiEngine
+export CUDA_VISIBLE_DEVICES=5
 set -e
-
 # RUN OPENMASK3D FOR A SINGLE SCENE
 # This script performs the following:
 # 1. Compute class agnostic masks and save them
@@ -18,10 +18,10 @@ cats=("airplane" "bag" "cap" "car" "chair" "earphone" "guitar" "knife" "lamp" "l
 for cat in ${cats[@]};
 do
     start=`date +%s`
-    list="0 1 2 3 4"
+    list="0 1 2 3 4 5 6 7 8 9"
     IFS=' ' read -r -a array <<< "$list"
     echo "$cat"
-    echo "$cat" >> feat_time.txt
+    echo "$cat" >> shapenetp_feat_time.txt
 
     # Print all values in the array
     for id in "${array[@]}";
@@ -50,7 +50,7 @@ do
         OPTIMIZE_GPU_USAGE=false
 
         # 1. Compute class agnostic masks and save them
-        echo "[INFO] Extracting class agnostic masks..."
+        #echo "[INFO] Extracting class agnostic masks..."
         CUDA_VISIBLE_DEVICES=1 python class_agnostic_mask_computation/get_masks_single_scene.py \
         general.experiment_name=${EXPERIMENT_NAME} \
         general.checkpoint=${MASK_MODULE_CKPT_PATH} \
@@ -63,16 +63,16 @@ do
         general.scene_path=${SCENE_PLY_PATH} \
         general.mask_save_dir="${OUTPUT_FOLDER_DIRECTORY}" \
         hydra.run.dir="${OUTPUT_FOLDER_DIRECTORY}/hydra_outputs/class_agnostic_mask_computation" 
-        echo "[INFO] Mask computation done!"
+        #echo "[INFO] Mask computation done!"
 
         # get the path of the saved masks
         MASK_FILE_BASE=$(echo $SCENE_PLY_PATH | sed 's:.*/::')
         MASK_FILE_NAME=${MASK_FILE_BASE/.ply/_masks.pt}
         SCENE_MASK_PATH="${OUTPUT_FOLDER_DIRECTORY}/${MASK_FILE_NAME}"
-        echo "[INFO] Masks saved to ${SCENE_MASK_PATH}."
+        #echo "[INFO] Masks saved to ${SCENE_MASK_PATH}."
 
         # 2. Compute mask features for each mask and save them
-        echo "[INFO] Computing mask features..."
+        #echo "[INFO] Computing mask features..."
 
         python compute_features_single_scene.py \
         data.masks.masks_path=${SCENE_MASK_PATH} \
@@ -95,7 +95,7 @@ do
     done
     end=`date +%s`
     runtime=$((end-start))
-    echo $runtime/5 >> feat_time.txt
+    echo $runtime >> shapenetp_feat_time.txt
 done
 
 
