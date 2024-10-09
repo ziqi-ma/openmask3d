@@ -1,7 +1,7 @@
 #!/bin/bash
 export OMP_NUM_THREADS=3  # speeds up MinkowskiEngine
 set -e
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=2
 
 # RUN OPENMASK3D FOR A SINGLE SCENE
 # This script performs the following:

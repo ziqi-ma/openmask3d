@@ -16,9 +16,11 @@ class InstSegEvaluator():
         self.clip_model = self.get_clip_model(clip_model_type)
         self.feature_size = self.get_feature_size(clip_model_type)
 
-    def get_query_sentences(self, label_list, sentence_structure="{}"):
+    def get_query_sentences(self, label_list, cat, decorated = True):
+        if decorated:
+            label_list = [f"{part} of a {cat}" for part in label_list]
         new_label_list = ["other"] + label_list
-        return [sentence_structure.format(label) for label in new_label_list]
+        return new_label_list
 
     def get_clip_model(self, clip_model_type):
         clip_model, _ = clip.load(clip_model_type, self.device)
@@ -65,13 +67,13 @@ class InstSegEvaluator():
         pred = pt_score.argmax(axis=1)
         return pred
 
-    def evaluate_full(self, data_dir):
+    def evaluate_full(self, data_dir, cat, decorated = True):
         with open(f"{data_dir}/label_map.json") as f:
             label_dict = json.load(f)
         ordered_label_list = []
         for i in range(len(label_dict)):
             ordered_label_list.append(label_dict[str(i+1)])
-        self.query_sentences = self.get_query_sentences(ordered_label_list)
+        self.query_sentences = self.get_query_sentences(ordered_label_list, cat, decorated=decorated)
         self.text_query_embeddings = self.get_text_query_embeddings().numpy()
         pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
         gt = np.load(f"{data_dir}/labels.npy") # 0 is unlabeled
@@ -82,7 +84,7 @@ class InstSegEvaluator():
             I = np.sum(np.logical_and(pt_pred == part+1, gt == part+1))
             U = np.sum(np.logical_or(pt_pred == part+1, gt == part+1))
             if U == 0:
-                iou = 1  # If the union of groundtruth and prediction points is empty, then count part IoU as 1
+                pass
             else:
                 iou = I / float(U)
                 part_ious.append(iou)
@@ -96,6 +98,7 @@ if __name__ == '__main__':
     #parser = argparse.ArgumentParser()
     #opt = parser.parse_args()
     # ScanNet200, "a {} in a scene", all masks are assigned 1.0 as the confidence score
+    decorated = False
     stime = time.time()
     evaluator = InstSegEvaluator('ViT-L/14@336px')
     split = "shapenetpart"
@@ -107,9 +110,9 @@ if __name__ == '__main__':
     cat_acc = {}
     for class_uid in class_uids:
         obj_path = f"/data/objaverse/holdout/{split}/{class_uid}"
-        print(class_uid)
-        cat = class_uid.split("_")[0]
-        acc, iou = evaluator.evaluate_full(obj_path)
+        #print(class_uid)
+        cat = " ".join(class_uid.split("_")[:-1])
+        acc, iou = evaluator.evaluate_full(obj_path, cat, decorated=decorated)
         all_accs.append(acc)
         all_ious.append(iou)
         

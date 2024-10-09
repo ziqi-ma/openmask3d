@@ -65,10 +65,13 @@ class InstSegEvaluator():
         pred = pt_score.argmax(axis=1)
         return pred
 
-    def evaluate_full(self, ordered_label_list, data_dir):
+    def evaluate_full(self, ordered_label_list, data_dir, rotated = False):
         self.query_sentences = self.get_query_sentences(ordered_label_list)
         self.text_query_embeddings = self.get_text_query_embeddings().numpy()
-        pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
+        if rotated:
+            pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
+        else:
+            pt_pred = self.compute_classes_per_pt(f"{data_dir}/openmask3dnorot/pc_zup_masks.pt", f"{data_dir}/openmask3dnorot/pc_zup_openmask3d_features.npy", keep_first=None)
         gt = np.load(f"{data_dir}/gt.npy") # this starts with 0
         acc = (pt_pred==gt).sum()/gt.shape[0]
         # get iou
@@ -77,7 +80,7 @@ class InstSegEvaluator():
             I = np.sum(np.logical_and(pt_pred == part+1, gt == part+1))
             U = np.sum(np.logical_or(pt_pred == part+1, gt == part+1))
             if U == 0:
-                iou = 1  # If the union of groundtruth and prediction points is empty, then count part IoU as 1
+                pass # If the union of groundtruth and prediction points is empty, pass
             else:
                 iou = I / float(U)
                 part_ious.append(iou)
@@ -87,7 +90,9 @@ class InstSegEvaluator():
 
 
 if __name__ == '__main__':
-    res_file_name = "res_shapenetp_rot.txt"
+    decorated = False
+    rotated = True
+    res_file_name = "res_shapenetp_rot_partname.txt"
     ids = ["0","1","2","3","4", "5","6","7","8","9"]
     cat2part = {'airplane': ['body','wing','tail','engine or frame'], 'bag': ['handle','body'], 'cap': ['panels or crown','visor or peak'], 
             'car': ['roof','hood','wheel or tire','body'],
@@ -105,13 +110,13 @@ if __name__ == '__main__':
         stime = time.time()
         evaluator = InstSegEvaluator('ViT-L/14@336px')
         labels = cat2part[category]
-        labels_decorated = [f"a {label} of a {category}" for label in labels]
-        print(labels_decorated)
+        if decorated:
+            labels = [f"{label} of a {category}" for label in labels]
         acc_all = []
         iou_all = []
         for id in ids:
             data_dir = f"/data/shapenetpart_rendered/{category}/{id}"
-            acc, iou = evaluator.evaluate_full(labels, data_dir)
+            acc, iou = evaluator.evaluate_full(labels, data_dir, rotated=rotated)
             acc_all.append(acc)
             iou_all.append(iou)
         mean_acc = np.mean(acc_all)

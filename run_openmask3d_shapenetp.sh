@@ -1,6 +1,6 @@
 #!/bin/bash
 export OMP_NUM_THREADS=3  # speeds up MinkowskiEngine
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=2
 set -e
 # RUN OPENMASK3D FOR A SINGLE SCENE
 # This script performs the following:
@@ -41,7 +41,7 @@ do
         SAM_CKPT_PATH="/data/checkpoints/semseg3d/sam_vit_h_4b8939.pth"
         # output directories to save masks and mask features
         EXPERIMENT_NAME="experiment"
-        OUTPUT_DIRECTORY="${SCENE_DIR}"
+        OUTPUT_DIRECTORY="${SCENE_DIR}/openmask3dnorot"
         TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
         OUTPUT_FOLDER_DIRECTORY="${OUTPUT_DIRECTORY}"
         SAVE_VISUALIZATIONS=false #if set to true, saves pyviz3d visualizations

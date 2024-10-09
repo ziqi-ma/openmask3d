@@ -65,10 +65,13 @@ class InstSegEvaluator():
         pred = pt_score.argmax(axis=1)
         return pred
 
-    def evaluate_full(self, ordered_label_list, data_dir):
+    def evaluate_full(self, ordered_label_list, data_dir, rotation=False):
         self.query_sentences = self.get_query_sentences(ordered_label_list)
         self.text_query_embeddings = self.get_text_query_embeddings().numpy()
-        pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
+        if not rotation:
+            pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
+        else:
+            pt_pred = self.compute_classes_per_pt(f"{data_dir}/openmask3drotated/pc_zup_masks.pt", f"{data_dir}/openmask3drotated/pc_zup_openmask3d_features.npy", keep_first=None)
         gt = np.load(f"{data_dir}/label.npy",allow_pickle=True).item()['semantic_seg']+1 # this starts with -1, add 1 to start with 0 (other)
         acc = (pt_pred==gt).sum()/gt.shape[0]
         # get iou
@@ -77,7 +80,7 @@ class InstSegEvaluator():
             I = np.sum(np.logical_and(pt_pred == part+1, gt == part+1))
             U = np.sum(np.logical_or(pt_pred == part+1, gt == part+1))
             if U == 0:
-                iou = 1  # If the union of groundtruth and prediction points is empty, then count part IoU as 1
+                pass  # If the union of groundtruth and prediction points is empty, pass
             else:
                 iou = I / float(U)
                 part_ious.append(iou)
@@ -87,6 +90,8 @@ class InstSegEvaluator():
 
 
 if __name__ == '__main__':
+    decorated = True
+    rotation = True
     classes = ["Bottle","Box","Bucket","Camera","Cart","Chair","Clock","CoffeeMachine",
                 "Dishwasher","Dispenser","Display","Door","Eyeglasses","Faucet","FoldingChair",
                 "Globe","Kettle","Keyboard","KitchenPot","Knife","Lamp","Laptop","Lighter",
@@ -97,16 +102,14 @@ if __name__ == '__main__':
     evaluator = InstSegEvaluator('ViT-L/14@336px')
     with open(f"/data/partnet-mobility/PartNetE_meta.json") as f:
         all_mapping = json.load(f)
-    print(all_mapping)
     stime = time.time()
     acc_allcats = []
     iou_allcats = []
     for category in classes:
         cat_stime = time.time()
         labels = all_mapping[category]
-        print(labels)
-        decorated_labels = [f"a {label} of a {category}" for label in labels]
-        print(labels)
+        if decorated:
+            labels = [f"{label} of a {category}" for label in labels]
         with open(f"/data/partnet-mobility/test/{category}/subsampled_ids.txt", 'r') as f:
             data_paths = f.read().splitlines()
         acc_all = []
@@ -114,7 +117,7 @@ if __name__ == '__main__':
         for data_dir in data_paths:
             id = data_dir.split("/")[-1]
             data_dir = f"/data/partnet-mobility/test/{category}/{id}"
-            acc, iou = evaluator.evaluate_full(decorated_labels, data_dir)
+            acc, iou = evaluator.evaluate_full(labels, data_dir, rotation=rotation)
             acc_all.append(acc)
             iou_all.append(iou)
         acc_allcats.append(np.mean(acc_all))
