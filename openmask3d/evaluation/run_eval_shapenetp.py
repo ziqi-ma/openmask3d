@@ -98,7 +98,7 @@ if __name__ == '__main__':
             'car': ['roof','hood','wheel or tire','body'],
             'chair': ['back','seat pad','leg','armrest'], 'earphone': ['earcup','headband','data wire'], 
             'guitar': ['head or tuners','neck','body'], 
-            'knife': ['blade', 'handle'], 'lamp': ['leg or wire','lampshade'], 
+            'knife': ['blade', 'handle'], 'lamp': ['base','lampshade', 'fixing bracket', 'stem'], 
             'laptop': ['keyboard','screen or monitor'], 
             'motorbike': ['gas tank','seat','wheel','handles or handlebars','light','engine or frame'], 'mug': ['handle', 'cup'], 
             'pistol': ['barrel', 'handle', 'trigger and guard'], 

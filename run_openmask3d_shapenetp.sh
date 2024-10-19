@@ -14,7 +14,7 @@ set -e
 
 start=`date +%s`
 cd openmask3d
-cats=("airplane" "bag" "cap" "car" "chair" "earphone" "guitar" "knife" "lamp" "laptop" "motorbike" "mug" "pistol" "rocket" "skateboard" "table")
+#cats=("airplane" "bag" "cap" "car" "chair" "earphone" "guitar" "knife" "lamp" "laptop" "motorbike" "mug" "pistol" "rocket" "skateboard" "table")
 for cat in ${cats[@]};
 do
     start=`date +%s`

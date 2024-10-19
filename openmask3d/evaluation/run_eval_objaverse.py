@@ -8,6 +8,28 @@ import tqdm
 import argparse
 import json
 import time
+import open3d as o3d
+import torch.nn.functional as F
+
+def visualize_pts(pts, colors):
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(pts)
+    pcd.colors = o3d.utility.Vector3dVector(colors.numpy())
+    o3d.visualization.draw_plotly([pcd])
+    
+def visualize_pt_labels(pts, labels): # pts is n*3, colors is n, 0 - n-1 where 0 is unlabeled
+    part_num = labels.max()
+    cmap_matrix = torch.tensor([[1,1,1], [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1],
+                [0,1,1], [0.5,0.5,0.5], [0.5,0.5,0], [0.5,0,0.5],[0,0.5,0.5],
+                [0.1,0.2,0.3],[0.2,0.5,0.3], [0.6,0.3,0.2], [0.5,0.3,0.5],
+                [0.6,0.7,0.2],[0.5,0.8,0.3]])[:part_num+1,:]
+    colors = ["white", "red", "green", "blue", "yellow", "magenta", "cyan","grey", "olive",
+                "purple", "teal", "navy", "darkgreen", "brown", "pinkpurple", "yellowgreen", "limegreen"]
+    caption_list=[f"{i}:{colors[i]}" for i in range(part_num+1)]
+    onehot = F.one_hot(labels.long(), num_classes=part_num+1) * 1.0 # n_pts, part_num+1, each row 00.010.0, first place is unlabeled (0 originally)
+    pts_rgb = torch.matmul(onehot, cmap_matrix) # n_pts,3
+    visualize_pts(pts, pts_rgb)
+    print(caption_list)
 
 class InstSegEvaluator():
     def __init__(self, clip_model_type):
@@ -67,7 +89,7 @@ class InstSegEvaluator():
         pred = pt_score.argmax(axis=1)
         return pred
 
-    def evaluate_full(self, data_dir, cat, decorated = True):
+    def evaluate_full(self, data_dir, cat, decorated = True, visualization = False):
         with open(f"{data_dir}/label_map.json") as f:
             label_dict = json.load(f)
         ordered_label_list = []
@@ -78,6 +100,14 @@ class InstSegEvaluator():
         pt_pred = self.compute_classes_per_pt(f"{data_dir}/pc_zup_masks.pt", f"{data_dir}/pc_zup_openmask3d_features.npy", keep_first=None)
         gt = np.load(f"{data_dir}/labels.npy") # 0 is unlabeled
         acc = (pt_pred==gt).sum()/gt.shape[0]
+        pcd = o3d.io.read_point_cloud(f"{data_dir}/points5000.pcd")
+        xyz = np.asarray(pcd.points)
+        if visualization:
+            torch.save(xyz, f"res_newcheckpt/{cat}_xyz.pt")
+            torch.save(torch.tensor(gt), f"res_newcheckpt/{cat}_gt.pt")
+            torch.save(torch.tensor(pt_pred), f"res_newcheckpt/{cat}_pred.pt")
+            visualize_pt_labels(xyz, torch.tensor(gt))
+            visualize_pt_labels(xyz, torch.tensor(pt_pred))
         # get iou
         part_ious = []
         for part in range(len(ordered_label_list)):
@@ -97,12 +127,14 @@ if __name__ == '__main__':
 
     #parser = argparse.ArgumentParser()
     #opt = parser.parse_args()
-    # ScanNet200, "a {} in a scene", all masks are assigned 1.0 as the confidence score
     decorated = False
+    visualization = False
     stime = time.time()
     evaluator = InstSegEvaluator('ViT-L/14@336px')
     split = "shapenetpart"
     class_uids = sorted(os.listdir(f"/data/objaverse/holdout/{split}")) # inside docker, data is data/ziqi
+    if visualization:
+        class_uids = [class_uids[i] for i in [2,3,4,8,23,25,29,31]]
     stime = time.time()
     all_accs = []
     all_ious = []
@@ -112,7 +144,7 @@ if __name__ == '__main__':
         obj_path = f"/data/objaverse/holdout/{split}/{class_uid}"
         #print(class_uid)
         cat = " ".join(class_uid.split("_")[:-1])
-        acc, iou = evaluator.evaluate_full(obj_path, cat, decorated=decorated)
+        acc, iou = evaluator.evaluate_full(obj_path, cat, decorated=decorated, visualization=visualization)
         all_accs.append(acc)
         all_ious.append(iou)
         
